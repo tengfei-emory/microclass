@@ -130,7 +130,9 @@ multinomClassify <- function(sequence, multinom.prob, post.prob = FALSE, prior =
     output <- X
     return(output)
   } else {
-    output <- X
+    output <- X$first_ind
+    rownames(output) <- sequence
+    colnames(output) <- rownames(multinom.prob)
     return(output)
   }
 }

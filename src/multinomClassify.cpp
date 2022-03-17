@@ -39,6 +39,9 @@ struct KmerProd_worker : public Worker {
             X[j] += Qmat(j,where);
           }
         }
+      }
+      
+      for (unsigned int j=0; j < X.size(); j++){
         First_ind(i,j) = X[j];
       }
     
