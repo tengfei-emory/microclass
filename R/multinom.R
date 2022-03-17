@@ -127,10 +127,11 @@ multinomClassify <- function(sequence, multinom.prob, post.prob = FALSE, prior =
   }
   X <- multinomClassifyCpp(int.list, log(ncol(multinom.prob), 4), multinom.prob, priors, post.prob)
   if(post.prob){
-    return(data.frame(taxon = rownames(multinom.prob)[X$first_ind], post_prob = X$first,
-                      post_prob_2 = X$second, stringsAsFactors = FALSE))
+    output <- X
+    return(output)
   } else {
-    return(rownames(multinom.prob)[X$first_ind])
+    output <- X
+    return(output)
   }
 }
 

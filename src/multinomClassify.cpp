@@ -13,14 +13,16 @@ struct KmerProd_worker : public Worker {
   std::vector<int> Where;
   RMatrix<double> Qmat;
   RVector<double> prior;
-  RVector<int> First_ind;
+  RMatrix<double> First_ind;
 
   KmerProd_worker(const std::vector<std::vector<int> > Seqs, const int K,
-                  const std::vector<int> Where, const RMatrix<double> Qmat, const RVector<double> prior, RVector<int> First_ind)
+                  const std::vector<int> Where, const RMatrix<double> Qmat, const RVector<double> prior, RMatrix<double> First_ind)
     : Seqs(Seqs), K(K), Where(Where), Qmat(Qmat), prior(prior), First_ind(First_ind) { }
   
   void operator()(std::size_t begin_row, std::size_t end_row) {
+    
     for (std::size_t i = begin_row; i < end_row; i++) {
+      
       std::vector<double> X(prior.size());
       for(unsigned int j=0; j<prior.size(); j++){
         X[j] = prior[j];           // Accumulation matrix
@@ -37,16 +39,9 @@ struct KmerProd_worker : public Worker {
             X[j] += Qmat(j,where);
           }
         }
+        First_ind(i,j) = X[j];
       }
-      int m = 1;
-      double mm = X[0];
-      for(unsigned int j=1; j<X.size(); j++){ // Search for largest element
-        if(X[j]>mm){
-          mm = X[j];
-          m = j+1;
-        }
-      }
-      First_ind[i] = m;
+    
     }
   }
 };
@@ -124,8 +119,8 @@ List multinomClassifyCpp(List seqs, int K, NumericMatrix QMat, NumericVector Pri
   int num_strings = Seqs.size();
   RVector<double> prior(Prior);
   RMatrix<double> Qmat(QMat);
-  IntegerVector first_ind(num_strings);  // Result matrix 1
-  RVector<int> First_ind(first_ind);
+  NumericMatrix first_ind(num_strings,QMat.nrow());  // Result matrix 1
+  RMatrix<double> First_ind(first_ind);
   
   std::vector<int> Where(K); // Position translation vector
   for(int i=0; i<K; i++){
@@ -133,16 +128,16 @@ List multinomClassifyCpp(List seqs, int K, NumericMatrix QMat, NumericVector Pri
   }
   
   if(posterior){
-    NumericVector first(num_strings);      // Result matrix 2
-    RVector<double> First(first);
-    IntegerVector second_ind(num_strings);  // Result matrix 3
-    RVector<int> Second_ind(second_ind);
-    NumericVector second(num_strings);     // Result matrix 4
-    RVector<double> Second(second);
-    KmerProdPost_worker kmerprodpost_worker(Seqs, K, Where, Qmat, prior, First_ind, First, Second_ind, Second);
-    parallelFor(0, num_strings, kmerprodpost_worker);
-    return Rcpp::List::create(Rcpp::Named("first_ind") = first_ind, Rcpp::Named("first") = first,
-                              Rcpp::Named("second_ind") = second_ind, Rcpp::Named("second") = second);
+    // NumericVector first(num_strings);      // Result matrix 2
+    // RVector<double> First(first);
+    // IntegerVector second_ind(num_strings);  // Result matrix 3
+    // RVector<int> Second_ind(second_ind);
+    // NumericVector second(num_strings);     // Result matrix 4
+    // RVector<double> Second(second);
+    // KmerProdPost_worker kmerprodpost_worker(Seqs, K, Where, Qmat, prior, First_ind, First, Second_ind, Second);
+    // parallelFor(0, num_strings, kmerprodpost_worker);
+    // return Rcpp::List::create(Rcpp::Named("first_ind") = first_ind, Rcpp::Named("first") = first,
+    //                           Rcpp::Named("second_ind") = second_ind, Rcpp::Named("second") = second);
   } else {
     KmerProd_worker kmerprod_worker(Seqs, K, Where, Qmat, prior, First_ind);
     parallelFor(0, num_strings, kmerprod_worker);
